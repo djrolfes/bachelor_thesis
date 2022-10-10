@@ -1,1 +1,1 @@
-# bachelor_thesis
+# This will be the description for my bachelor thesis
