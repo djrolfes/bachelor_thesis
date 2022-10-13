@@ -9,6 +9,8 @@ class SU2_element:
         [   -c+id   a-ib]]
         '''
         self.params = params
+        self.trace = 2*params[0]
+
 
     @classmethod
     def from_matrix(cls, matrix_rep):
@@ -21,6 +23,18 @@ class SU2_element:
         c = np.real(matrix_rep[0,1])
         d = np.imag(matrix_rep[0,1])
         return cls(np.array([a,b,c,d]))
+
+
+    @classmethod
+    def generators(cls, a : int):
+        '''
+        returns the a = (0,1,2,3)th generator of SU(2) as an element 
+        '''
+        gen = np.zeros(4)
+        gen[-a] = 1
+        return cls(gen)
+
+
     
     def matrix(self):
         '''
@@ -30,6 +44,19 @@ class SU2_element:
         w = self.params[2] + 1j*self.params[3]
         return np.array([[u,w],[-np.conj(w), np.conj(u)]])
 
+    def adjoint(self):
+        '''
+        returns the adjoint version of the SU(2) element
+        '''
+        return np.conjugate(self.matrix().T)
+
+    def inverse(self):
+        '''
+        alias to adjoint, returns the inverse of the given SU2_element.
+        '''
+        return self.adjoint()
+
+    
 
 def su2_product(left_element, right_element):
     '''
