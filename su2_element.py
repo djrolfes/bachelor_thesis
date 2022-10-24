@@ -34,7 +34,6 @@ class SU2_element:
         gen[-a] = 1
         return cls(gen)
 
-
     
     def matrix(self):
         '''
@@ -56,9 +55,54 @@ class SU2_element:
         '''
         return self.adjoint()
 
+    def get_angles(self):
+        '''
+        a function to return the turn angles alpha from the exp(-i/2 alpha * sigma),
+        with sigma being the pauli matrices sigma_1, sigma_2 and sigma_3, of a 
+        given SU2_element.
+        '''
+        magnitude = np.arccos(self.params[0])
+        return magnitude/np.sin(magnitude)\
+             * np.array([self.params[3],self.params[2],self.params[1]])
+    
+    def left_product(self, partner):
+        '''
+        updates the SU2_element, by creating the left product of the element and another SU2_element
+        '''
+        a = self.params[0]*partner.params[0] - self.params[1]*partner.params[1]\
+             - self.params[2]*partner.params[2] - self.params[3]*partner.params[3]
+        b = self.params[1]*partner.params[0] + self.params[0]*partner.params[1]\
+             + self.params[2]*partner.params[3] - self.params[3]*partner.params[2]
+        c = self.params[0]*partner.params[2] + self.params[2]*partner.params[0]\
+             + self.params[3]*partner.params[1] - self.params[1]*partner.params[3]
+        d = self.params[0]*partner.params[3] + self.params[1]*partner.params[2]\
+             + self.params[3]*partner.params[0] - self.params[2]*partner.params[1]
+        
+        self.params = np.array([a,b,c,d])
+    
+    def right_product(self, partner):
+        '''
+        updates the SU2_element, by creating the right product of the element and another SU2_element
+        '''
+        a = partner.params[0]*self.params[0] - partner.params[1]*self.params[1]\
+             - partner.params[2]*self.params[2] - partner.params[3]*self.params[3]
+        b = partner.params[1]*self.params[0] + partner.params[0]*self.params[1]\
+             + partner.params[2]*self.params[3] - partner.params[3]*self.params[2]
+        c = partner.params[0]*self.params[2] + partner.params[2]*self.params[0]\
+             + partner.params[3]*self.params[1] - partner.params[1]*self.params[3]
+        d = partner.params[0]*self.params[3] + partner.params[1]*self.params[2]\
+             + partner.params[3]*self.params[0] - partner.params[2]*self.params[1]
+        self.params = np.array([a,b,c,d])
     
 
-def su2_product(left_element, right_element):
+    def renormalise(self):
+        '''
+        renormalise the SU2_element
+        '''
+        self.params = self.params/np.linalg.norm(self.params)
+
+
+def su2_product(left_element: SU2_element, right_element: SU2_element) -> SU2_element:
     '''
     Function to create the product of two SU(2) elements in fundamental rep
     '''
@@ -69,7 +113,7 @@ def su2_product(left_element, right_element):
 
 
 def main():
-
+    
     return
 
 if __name__ == "__main__":

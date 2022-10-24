@@ -31,7 +31,6 @@ def get_neighbors(lattice_array, neighbors=3):
         raise ValueError("Vertex does not have enough neighbors.")
 
 
-
 def main():
     lattice = generate_vertices(4)
 
