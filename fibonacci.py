@@ -1,6 +1,7 @@
 import numpy as np
 from pynverse import inversefunc
 
+
 def generate_vertices(N):
     '''
     generates an array of points generated on a fibonaci lattice

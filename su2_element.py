@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class SU2_element:
     def __init__(self,params):
         '''
@@ -23,6 +22,13 @@ class SU2_element:
         c = np.real(matrix_rep[0,1])
         d = np.imag(matrix_rep[0,1])
         return cls(np.array([a,b,c,d]))
+
+    @classmethod
+    def vectorize_init(cls, arr):
+        '''
+        a vectorized __init__ method to initialize an array of params as SU2_elements
+        '''
+        return np.array([cls(vec) for vec in arr])
 
 
     @classmethod
@@ -62,8 +68,8 @@ class SU2_element:
         given SU2_element.
         '''
         magnitude = np.arccos(self.params[0])
-        return magnitude/np.sin(magnitude)\
-             * np.array([self.params[3],self.params[2],self.params[1]])
+        quotient = 1. if self.params[0] == 1. else magnitude/np.sqrt(1 - self.params[0]**2)
+        return quotient*np.array([self.params[3],self.params[2],self.params[1]])
     
     def left_product(self, partner):
         '''
@@ -108,12 +114,13 @@ def su2_product(left_element: SU2_element, right_element: SU2_element) -> SU2_el
     '''
     return SU2_element.from_matrix(np.dot(left_element.matrix(),right_element.matrix()))
 
+#def su2_element_vectorize()
 
 
 
 
 def main():
-    
+
     return
 
 if __name__ == "__main__":
