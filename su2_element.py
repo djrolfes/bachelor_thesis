@@ -53,7 +53,7 @@ class SU2_element:
         '''
         returns the adjoint version of the SU(2) element
         '''
-        return np.conjugate(self.matrix().T)
+        return self.from_matrix(np.conjugate(self.matrix().T))
 
     def inverse(self):
         '''
@@ -114,7 +114,15 @@ def su2_product(left_element: SU2_element, right_element: SU2_element) -> SU2_el
     '''
     return SU2_element.from_matrix(np.dot(left_element.matrix(),right_element.matrix()))
 
-#def su2_element_vectorize()
+def get_color_states(lattice, i=0, j=0):
+    '''
+    create the components in color space of U as a diagonal matrix
+    '''
+    SU2_lattice = SU2_element.vectorize_init(lattice)
+    U = np.zeros((len(SU2_lattice), len(SU2_lattice)),dtype=np.complex64)
+    for index, element in enumerate(SU2_lattice):
+        U[index, index] = element.matrix()[i,j]
+    return U
 
 
 

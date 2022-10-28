@@ -20,6 +20,14 @@ def vertice_distances(lattice_array, norm=None):
 
     return distances+distances.T
 
+def calc_mean_distance(lattice_array, norm=None):
+    '''
+    returns the mean distance between nearest elements of a lattice_array
+    '''
+    dist = np.sort(vertice_distances(lattice_array, norm=norm))
+    return np.mean(dist.T[1])
+
+
 @njit
 def get_neighbors(lattice_array, neighbors=None):
     '''
@@ -43,23 +51,25 @@ def get_neighbors(lattice_array, neighbors=None):
     #except ValueError:
     #    raise ValueError("Vertex does not have enough neighbors.")
 
-def get_neighbors_single_element(element, lattice_array):
+@njit
+def get_neighbors_single_element(element, lattice_array, norm=None):
     '''
     calculates the nearest neighbors to a given vertex using the eucl. norm and returns the neighboring
     elements ordered and an array of indeces used for ordering.
 
     the element itself is included as the element with the lowest distance
     '''
-    norm = np.linalg.norm
-    distances = norm(lattice_array-element, axis=1)
+    norm = np.linalg.norm if norm is None else norm
+    distances = np.zeros(lattice_array.shape[0])
+    for index, neigh in enumerate(lattice_array):
+        distances[index] = norm(neigh-element)
     sort_indeces = np.argsort(distances)
     sorted_lattice = lattice_array[sort_indeces]
     return sorted_lattice, sort_indeces
 
 def main():
     lattice = generate_vertices(2**3)
-    output, indeces = get_neighbors_single_element(lattice[1],lattice)
-    output2, indeces2 = get_neighbors(lattice)
+    dist = vertice_distances(lattice)
 
     return
 
