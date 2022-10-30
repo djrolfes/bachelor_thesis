@@ -139,7 +139,7 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
     return La
 
 
-def angular_momentum(lattice_array, a:int, n=None):
+def angular_momentum(lattice_array, a: int, n=None):
     '''
     quick and dirty implementation to get the whole La matrix by calling
     'angular_momentum_single_element' for every lattice element

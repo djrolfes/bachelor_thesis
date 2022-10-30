@@ -34,7 +34,7 @@ def fourier_vector(lattice_array, a:int, k):
     '''
     calculates the fourier vectors, as in 'findPoints.R' in the genz writeup
     '''
-    lattice_array = lattice_array[[1,1+a].append([i for i in range(5,lattice_array.shape[0])]),::]
+    lattice_array = lattice_array[[0,a].append([i for i in range(4,lattice_array.shape[0])]),::]
     result = np.array([np.exp(1j * np.dot(i,k)) for i in lattice_array])
     return result
 

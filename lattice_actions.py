@@ -1,9 +1,9 @@
 import numpy as np
-from numba import njit
-from fibonacci import generate_vertices
+from numba import njit, jit
+from fibonacci import generate_vertices, generate_vertices_angles
 #all things lattice actions
 
-@njit
+
 def vertice_distances(lattice_array, norm=None):
     '''
     creates an NxN matrix to with distances of the different points
@@ -20,16 +20,25 @@ def vertice_distances(lattice_array, norm=None):
 
     return distances+distances.T
 
-def calc_mean_distance(lattice_array, norm=None):
-    '''
-    returns the mean distance between nearest elements of a lattice_array
-    '''
-    dist = np.sort(vertice_distances(lattice_array, norm=norm))
-    return np.mean(dist.T[1])
-
-
 @njit
-def get_neighbors(lattice_array, neighbors=None):
+def get_neighbors(lattice_array, norm=None):
+    '''
+    returns the next 'neighbors=n' neighbor vertices to every given lattice vertice by eucl. distance
+    in a (#vertices, n, dimension) shaped array and the array 'sort_indeces' used for sorting the distances.
+    'sort_indeces' includes an #vertices x #vertices array used for sorting the vertices by distance
+
+    default output for neighbors is all neighbors.
+    '''
+    norm = np.linalg.norm if norm is None else norm
+    output = np.zeros((lattice_array.shape[0],lattice_array.shape[0], 4))
+    sort_indeces = np.zeros((lattice_array.shape[0],lattice_array.shape[0]),dtype="int32")
+    for i,_ in enumerate(sort_indeces):
+        output[i,:,:], sort_indeces[i,:] = get_neighbors_single_element(lattice_array[i], lattice_array, norm=norm)
+
+    return output, sort_indeces
+
+
+def get_neighbors_old(lattice_array, neighbors=None):
     '''
     returns the next 'neighbors=n' neighbor vertices to every given lattice vertice by eucl. distance
     in a (#vertices, n, dimension) shaped array and the array 'sort_indeces' used for sorting the distances.
@@ -67,9 +76,20 @@ def get_neighbors_single_element(element, lattice_array, norm=None):
     sorted_lattice = lattice_array[sort_indeces]
     return sorted_lattice, sort_indeces
 
+
+def calc_mean_distance(lattice_array, norm=None):
+    '''
+    returns the mean distance between nearest elements of a lattice_array
+    '''
+    norm = np.linalg.norm if norm is None else norm
+
+    dist = np.sort(vertice_distances(lattice_array, norm=norm))
+    return np.mean(dist.T[1])
+
 def main():
-    lattice = generate_vertices(2**3)
-    dist = vertice_distances(lattice)
+    lattice = generate_vertices(2**5)
+    print(get_neighbors(lattice)[1])
+    print(get_neighbors_old(lattice)[1])
 
     return
 
