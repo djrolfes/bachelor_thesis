@@ -1,0 +1,82 @@
+#include "su2Element.hpp"
+
+#ifndef SU2ICOElEMENT_HPP
+#define SU2ICOElEMENT_HPP
+
+#define ICO_TAU_HALF 0.8090169943749474241022934
+#define ICO_TAU_PRIME_HALF 0.3090169943749474241022934
+#define IKO_EPS 1e-8
+
+class su2IcoElement : public su2Element
+{
+public:
+  su2IcoElement()
+    : su2Element(){};
+
+  su2IcoElement(const su2Element& el)
+  {
+    for (int i = 0; i < 4; i++) {
+      su2Element::element[i] = el[i];
+    }
+  };
+
+  su2IcoElement& operator=(const su2Element& el)
+  {
+    for (int i = 0; i < 4; i++) {
+      su2Element::element[i] = el[i];
+    }
+    return *this;
+  };
+
+  void renormalize()
+  {
+    for (int i = 0; i < 4; i++) {
+      if (abs(su2Element::element[i]) < IKO_EPS) {
+        su2Element::element[i] = 0;
+      } else if (roundToIco(&su2Element::element[i], ICO_TAU_HALF)) {
+      } else if (roundToIco(&su2Element::element[i], ICO_TAU_PRIME_HALF)) {
+      } else if (roundToIco(&su2Element::element[i], 0.5)) {
+      } else if (roundToIco(&su2Element::element[i], 1.0)) {
+      } else {
+        printf("You just left the Gauge Group [%f,%f,%f,%f]\n",
+               su2Element::element[0],
+               su2Element::element[1],
+               su2Element::element[2],
+               su2Element::element[3]);
+      }
+    }
+  };
+
+  su2IcoElement randomize(double delta, std::mt19937& gen)
+  {
+    std::uniform_int_distribution<> dist(0, 11);
+    return randomize(dist(gen));
+  };
+
+protected:
+  su2IcoElement randomize(int direction)
+  {
+    double multEl[4] = { ICO_TAU_HALF, 0, 0, 0 };
+    int signOne = 1 - (2 * (direction & 1));
+    int signTwo = 1 - (direction & 2);
+
+    int offset = direction >> 2;
+
+    multEl[1 + ((offset) % 3)] = 0;
+    multEl[1 + ((offset + 1) % 3)] = signOne * 0.5;
+    multEl[1 + ((offset + 2) % 3)] = signTwo * ICO_TAU_PRIME_HALF;
+
+    return su2IcoElement(&multEl[0]) * (*this);
+  };
+
+  bool roundToIco(double* el, double roundVal)
+  {
+    if ((abs(*el) + IKO_EPS) > roundVal && (abs(*el) - IKO_EPS) < roundVal) {
+      *el = ((*el > 0) - (*el < 0)) * roundVal;
+      return true;
+    }
+    return false;
+  }
+};
+
+#endif /*SU2ICOElEMENT_HPP*/
