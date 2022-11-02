@@ -43,4 +43,4 @@ plaquette = np.genfromtxt("tmp/scan.csv")[:,1]
 plaquette_std_dev = np.genfromtxt("tmp/scan.csv")[:,2]
 
 
-print(plaquettes)
+print(plaquette)

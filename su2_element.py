@@ -1,4 +1,8 @@
 import numpy as np
+from numba.experimental import jitclass
+from numba import float64, int32
+from numba import jit
+
 
 class SU2_element:
     def __init__(self,params):

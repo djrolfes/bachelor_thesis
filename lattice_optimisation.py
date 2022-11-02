@@ -73,7 +73,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
             old_nabla = nabla
             angles += adaptive*nabla
         else:
-            print('overshot')
+            print('overshot') # shouldn't be triggert. if it is, choose less neighbors
             angles = old_angles + adaptive*old_nabla
             tmp = mean
             mean = old_mean
