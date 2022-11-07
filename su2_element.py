@@ -44,7 +44,31 @@ class SU2_element:
         gen[-a] = 1
         return cls(gen)
 
-    
+    @classmethod
+    def from_angles(cls, angle_arr):
+        '''
+        creates the SU2_element from a given array of angles [psi1, psi2, psi3]
+        '''
+        abs_psi = np.linalg.norm(angle_arr)
+        angle_arr = angle_arr/abs_psi
+        a = np.cos(abs_psi/2)
+        b = np.sin(abs_psi/2)*angle_arr[2]
+        c = np.sin(abs_psi/2)*angle_arr[1]
+        d = np.sin(abs_psi/2)*angle_arr[0]
+        return cls(np.array([a,b,c,d]))
+
+    def get_angles(self):
+        '''
+        a function to return the turn angles alpha from the exp(-i/2 alpha * sigma),
+        with sigma being the pauli matrices sigma_1, sigma_2 and sigma_3, of a 
+        given SU2_element.
+        '''
+        if abs(self.params[0]+1)<1e-8:
+            return np.array([np.pi, 0, 0])
+        magnitude = np.arccos(self.params[0])
+        quotient = 2. if self.params[0] == 1. else 2*magnitude/np.sin(magnitude)
+        return quotient*np.array([self.params[3],self.params[2],self.params[1]])
+
     def matrix(self):
         '''
         return the 2x2 matrix rep of the given SU2_element
@@ -65,19 +89,10 @@ class SU2_element:
         '''
         return self.adjoint()
 
-    def get_angles(self):
-        '''
-        a function to return the turn angles alpha from the exp(-i/2 alpha * sigma),
-        with sigma being the pauli matrices sigma_1, sigma_2 and sigma_3, of a 
-        given SU2_element.
-        '''
-        magnitude = np.arccos(self.params[0])
-        quotient = 1. if self.params[0] == 1. else magnitude/np.sqrt(1 - self.params[0]**2)
-        return quotient*np.array([self.params[3],self.params[2],self.params[1]])
-    
     def left_product(self, partner):
         '''
-        updates the SU2_element, by creating the left product of the element and another SU2_element
+        updates the SU2_element, by creating the left product of the element U and another SU2_element U'
+        U * U'
         '''
         a = self.params[0]*partner.params[0] - self.params[1]*partner.params[1]\
              - self.params[2]*partner.params[2] - self.params[3]*partner.params[3]
@@ -92,7 +107,8 @@ class SU2_element:
     
     def right_product(self, partner):
         '''
-        updates the SU2_element, by creating the right product of the element and another SU2_element
+        updates the SU2_element, by creating the right product of the element U and another SU2_element U'
+        U' * U
         '''
         a = partner.params[0]*self.params[0] - partner.params[1]*self.params[1]\
              - partner.params[2]*self.params[2] - partner.params[3]*self.params[3]
@@ -118,15 +134,22 @@ def su2_product(left_element: SU2_element, right_element: SU2_element) -> SU2_el
     '''
     return SU2_element.from_matrix(np.dot(left_element.matrix(),right_element.matrix()))
 
+
 def get_color_states(lattice, i=0, j=0):
     '''
     create the components in color space of U as a diagonal matrix
     '''
-    SU2_lattice = SU2_element.vectorize_init(lattice)
-    U = np.zeros((len(SU2_lattice), len(SU2_lattice)),dtype=np.complex64)
-    for index, element in enumerate(SU2_lattice):
-        U[index, index] = element.matrix()[i,j]
-    return U
+    J = 1/np.sqrt(np.sum(lattice**2, axis=1))
+    if (i==0 and j==0) or (i==1 and j==1):
+        u = (lattice[:,0] + 1j*lattice[:,1])*J
+    if (i==1 and j==1):
+        u = np.conjugate(u)
+    if (i != j):
+        u = (lattice[:,2] + 1j*lattice[:,3])*J
+    if (i==1 and j==0):
+        u = np.conjugate(u)
+
+    return np.diag(u)
 
 
 

@@ -13,6 +13,7 @@ def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None):
     n = 1 if n == None else n
     La = angular_momentum(lattice_array, a, n=n)
     U = get_color_states(lattice_array, i=i, j=j)
+    #print(La, "\n", U, "\n", lattice_array)
     return np.dot(La, U) - np.dot(U,La)
 
 def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None):
