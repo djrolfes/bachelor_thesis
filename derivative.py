@@ -16,7 +16,7 @@ def swap_elements(arr, i1, i2):
     return arr
 
 #@njit
-def is_linear_independent(matrix, eps=1e-5):
+def is_linear_independent(matrix, eps=1e-8):
     '''
     returns if the vectors making up a given matrix are linear independent, by calculating the eigenvalues
     of the matrix and checking wether one is zero. 
@@ -28,7 +28,7 @@ def is_linear_independent(matrix, eps=1e-5):
     return np.all(np.abs(eigs)>eps)
         
 
-def get_linear_independent_single_element(element: SU2_element, neighbors: SU2_element):
+def get_linear_independent_single_element(element: SU2_element, neighbors: SU2_element, left=True):
     '''
     the get_linear_independent function for a single element
     '''
@@ -37,7 +37,8 @@ def get_linear_independent_single_element(element: SU2_element, neighbors: SU2_e
         combs = combinations(neighbors[:i], r=3)
         index_combs = np.array(list(combinations(range(0,i), r=3)))#
         for index,comb in enumerate(combs):
-            connecting_elements = np.array([su2_product(elem, element.inverse()) for elem in comb])
+            #connecting_elements = np.array([su2_product(elem, element.inverse()) for elem in comb])
+            connecting_elements = get_conn_elements(element, comb, left=left)
             alphas = np.array([connecting_element.get_angles() for connecting_element in connecting_elements])
             matrix = np.column_stack(alphas)
             if is_linear_independent(matrix) == True:
@@ -46,11 +47,21 @@ def get_linear_independent_single_element(element: SU2_element, neighbors: SU2_e
     else:
         raise BaseException("No linear independent combination passible")
 
+def get_conn_elements(element : SU2_element, neighbors, left=True):
+    '''
+    calculate the SU2_elements connecting the neighbor elements with the given element
+    '''
+    if left:
+        return np.array([su2_product(elem, element.inverse()) for elem in neighbors])
+    else:
+        return np.array([su2_product(element.inverse(), elem) for elem in neighbors])
 
-def angular_momentum_single_element(element, lattice_array, a: int, n=None, neighbors=None):
+def angular_momentum_single_element(element, lattice_array, a: int, n=None, neighbors=None, left=True):
     '''
     calculates the angular momentum operator La by using the 3n nearest neighbors 
     of a given lattice element, should be correct
+
+    use left=False to generate the Ra operator
     '''
     n = 1 if n == None else n
     unit_vec = np.array([0,0,0])
@@ -67,12 +78,12 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
     La = np.zeros(len(SU2_neighbors)+1)
     gammas = np.array([])
     for neighbor_group in range(n):
-        connecting_elements = np.array([su2_product(elem, element.inverse()) for elem in SU2_neighbors[:3]])
+        connecting_elements = get_conn_elements(element, SU2_neighbors[:3], left=left)
         alphas = [connecting_element.get_angles() for connecting_element in connecting_elements]
         matrix = np.asmatrix(np.column_stack(alphas))
         if not is_linear_independent(matrix): #somewhat tested
-            print('linear dep', matrix, "\n", np.linalg.svd(matrix),"\n", np.linalg.eig(matrix), "\n\n")
-            matrix, swap_indeces = get_linear_independent_single_element(element, SU2_neighbors)
+            #print('linear dep', matrix, "\n", np.linalg.svd(matrix),"\n", np.linalg.eig(matrix), "\n\n")
+            matrix, swap_indeces = get_linear_independent_single_element(element, SU2_neighbors, left=left)
 
             for index, num in enumerate(swap_indeces):
                 sort_indeces = swap_elements(sort_indeces, index+neighbor_group, num+neighbor_group)
@@ -89,15 +100,17 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
     return -1j*La
 
 
-def angular_momentum(lattice_array, a: int, n=None):
+def angular_momentum(lattice_array, a: int, n=None, left=True):
     '''
     quick and dirty implementation to get the whole La matrix by calling
     'angular_momentum_single_element' for every lattice element
+
+    use left=False to generate the Ra operator
     '''
     n = 1 if n == None else n
     La = np.zeros((lattice_array.shape[0],lattice_array.shape[0]), dtype=np.complex128)
     for index, element in enumerate(lattice_array):
-        La[index,:] = angular_momentum_single_element(element, lattice_array, a, n=n)
+        La[index,:] = angular_momentum_single_element(element, lattice_array, a, n=n, left=left)
     return La
 
 

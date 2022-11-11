@@ -36,15 +36,6 @@ class SU2_element:
 
 
     @classmethod
-    def generators(cls, a : int):
-        '''
-        returns the a = (0,1,2,3)th generator of SU(2) as an element 
-        '''
-        gen = np.zeros(4)
-        gen[-a] = 1
-        return cls(gen)
-
-    @classmethod
     def from_angles(cls, angle_arr):
         '''
         creates the SU2_element from a given array of angles [psi1, psi2, psi3]
