@@ -16,7 +16,7 @@ def swap_elements(arr, i1, i2):
     return arr
 
 #@njit
-def is_linear_independent(matrix, eps=1e-8):
+def is_linear_independent(matrix, eps=1e-6):
     '''
     returns if the vectors making up a given matrix are linear independent, by calculating the eigenvalues
     of the matrix and checking wether one is zero. 
@@ -24,8 +24,7 @@ def is_linear_independent(matrix, eps=1e-8):
     #eps = np.finfo(np.linalg.norm(matrix).dtype).eps
     #TOLERANCE = max(eps * np.array(matrix.shape))
     #print(TOLERANCE)
-    eigs, _ = np.linalg.eig(matrix)
-    return np.all(np.abs(eigs)>eps)
+    return abs(np.linalg.det(matrix)) > eps
         
 
 def get_linear_independent_single_element(element: SU2_element, neighbors: SU2_element, left=True):
@@ -90,7 +89,8 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
                 SU2_neighbors = swap_elements(SU2_neighbors, index, num)
 
         #gammas = np.append(gammas, np.asarray(unit_vec @ np.asmatrix(matrix).I))
-        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix.T, unit_vec.T)))
+        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix.T, unit_vec.T)))# as per genz_rep it should just be matrix instead of matrix
+
         SU2_neighbors = SU2_neighbors[3:]
     
     La[element_index] = -np.sum(gammas/n)
@@ -112,6 +112,69 @@ def angular_momentum(lattice_array, a: int, n=None, left=True):
     for index, element in enumerate(lattice_array):
         La[index,:] = angular_momentum_single_element(element, lattice_array, a, n=n, left=left)
     return La
+
+
+def new_calc_alpha(element: SU2_element, neighbor: SU2_element, left=True):
+    '''
+    returns the alpha-vector for a given element U and neighbor V
+    left = True:    V_i \dot U^-1
+    left = False:   U^-1 \dot V_i
+    '''
+    if left:
+        conn = su2_product(neighbor, element.inverse())
+    else:
+        conn = su2_product(element.inverse(), neighbor)
+    return conn.get_angles()
+
+
+def new_get_linear_independent(element : SU2_element, neighbors, left=True):
+    '''
+    returns the (alpha, alpha, alpha) matrix to calculate gamma_i for the first three viable neighbors
+    neighbors is an ordered array of SU2_element objects
+    '''
+    i=3
+    alpha_matrix = np.zeros((3,3))
+    while i<neighbors.shape[0]:
+        combs = combinations(neighbors[1:i+1], r=3)
+        index_combs = np.array(list(combinations(range(1,i+1), r=3)))
+        for indeces, comb in zip(index_combs, combs):
+            for j in range(3):
+                alpha_matrix[:,j] = new_calc_alpha(element, comb[j], left=left).T
+            if is_linear_independent(alpha_matrix):
+                return alpha_matrix, indeces #later for more neighbors
+        i += 1 
+    else:
+        raise BaseException("No linear independent combination passible")
+    
+
+def new_calc_gamma(alpha_matrix, a: int):
+    '''
+    solves e_a = gamma \dot alpha_matrix for gamma using the inverse of alpha_matrix
+    '''
+    unit_vec = np.zeros(3)
+    unit_vec[a-1] = 1
+    return np.dot(unit_vec, np.linalg.inv(alpha_matrix))
+
+
+
+def new_angular_momentum(lattice_array, a: int, n=None, left=True):
+    '''
+    new try at the implementation of the forward derivative with nx3 neighbors
+    '''
+    n = 1 if n == None else n
+    La = np.zeros((lattice_array.shape[0], lattice_array.shape[0]))
+    su2_lattice = SU2_element.vectorize_init(lattice_array)
+
+    for index, element in enumerate(lattice_array):
+        _, neighbors_indeces = get_neighbors_single_element(element, lattice_array)
+        su2_neighbors = su2_lattice[neighbors_indeces]
+        alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, left=left)
+        gammas = new_calc_gamma(alpha_matrix, a)
+        La[index, index] = -np.sum(gammas)
+        for i,ind in enumerate(inds):
+            La[index, neighbors_indeces[ind]] = gammas[i]
+    
+    return -1j*La
 
 
 

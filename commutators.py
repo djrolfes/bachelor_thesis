@@ -1,20 +1,41 @@
 import numpy as np
 from fibonacci import generate_vertices
-from derivative import angular_momentum
+from derivative import angular_momentum, new_angular_momentum
 from su2_element import *
 # all things implementing the commutators
 
-def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None):
+def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):
     '''
-    implementation of the comutator [La,U]
+    implementation of the commutator [La,U]
     '''
     i = 0 if i == None else i
     j = 0 if j == None else j
     n = 1 if n == None else n
-    La = angular_momentum(lattice_array, a, n=n)
+    La = ang(lattice_array, a, n=n)
     U = get_color_states(lattice_array, i=i, j=j)
-    #print(La, "\n", U, "\n", lattice_array)
     return np.dot(La, U) - np.dot(U,La)
+
+def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
+    '''
+    implementation of the commutator [La, Lb] + 2i eps_{abc} Lc
+    '''
+    def epsilon() -> int:
+        if a == b:
+            return 0
+        t = np.array([a,b,c])   #roll [a,b,c] s.t 1 is in front and check if its equal to [1,2,3]
+        index = np.where(t == 1)[0][0]
+        if np.all(np.roll(t, -index) == np.array([1,2,3])):
+            return 1
+        return -1
+
+    n = 1 if n == None else n
+    c = ({1,2,3} - {a,b}).pop()
+
+    La = ang(lattice_array, a, n=n)
+    Lb = ang(lattice_array, b, n=n)
+    Lc = ang(lattice_array, c, n=n)
+    return (np.dot(La, Lb) - np.dot(Lb,La)) + 2j*epsilon()*Lc
+
 
 def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
     '''
@@ -28,14 +49,14 @@ def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
         return (-1)**i * get_color_states(lattice_array, i = i, j = j)/2
     raise BaseException("a is likely not 1, 2 or 3")
 
-def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None):
+def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):
     '''
     returns [L,U] - (ta)U 
     '''
     i = 0 if i == None else i
     j = 0 if j == None else j
     n = 1 if n == None else n
-    comm = angular_momentum_commutator(lattice_array, a, n=n, i=i, j=j)
+    comm = angular_momentum_commutator(lattice_array, a, n=n, i=i, j=j, ang=ang)
     ta_U = calc_ta_U(lattice_array, a = a, i = i, j = j)
     return comm - ta_U
 
@@ -61,9 +82,7 @@ def calc_r(commutator, vec=None):
 
 
 def main():
-    lattice = generate_vertices(2**4)
-    t = test_angular_momentum_comutator(lattice, 1, n=1, j=0,i=0)
-    print(t)
+
     return
 
 if __name__ == "__main__":

@@ -54,11 +54,11 @@ class SU2_element:
         with sigma being the pauli matrices sigma_1, sigma_2 and sigma_3, of a 
         given SU2_element.
         '''
-        if abs(self.params[0]+1)<1e-8:
-            return np.array([np.pi, 0, 0])
+        #if abs(self.params[0]+1)<1e-8:
+        #    return np.array([np.pi, 0, 0])
         magnitude = np.arccos(self.params[0])
         quotient = 2. if self.params[0] == 1. else 2*magnitude/np.sin(magnitude)
-        return quotient*np.array([self.params[3],self.params[2],self.params[1]])
+        return quotient/2 *np.array([self.params[3],self.params[2],self.params[1]])
 
     def matrix(self):
         '''
@@ -130,15 +130,16 @@ def get_color_states(lattice, i=0, j=0):
     '''
     create the components in color space of U as a diagonal matrix
     '''
-    J = 1/np.sqrt(np.sum(lattice**2, axis=1))
+    #J = 1/np.sqrt(np.sum(lattice**2, axis=1))
+    #print("J:\n", J)
     if (i==0 and j==0) or (i==1 and j==1):
-        u = (lattice[:,0] + 1j*lattice[:,1])*J
+        u = (lattice[:,0] + 1j*lattice[:,1])#*J
     if (i==1 and j==1):
         u = np.conjugate(u)
     if (i != j):
-        u = (lattice[:,2] + 1j*lattice[:,3])*J
+        u = (lattice[:,2] + 1j*lattice[:,3])#*J
     if (i==1 and j==0):
-        u = np.conjugate(u)
+        u = -np.conjugate(u)
 
     return np.diag(u)
 
