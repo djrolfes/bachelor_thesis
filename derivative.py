@@ -89,7 +89,7 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
                 SU2_neighbors = swap_elements(SU2_neighbors, index, num)
 
         #gammas = np.append(gammas, np.asarray(unit_vec @ np.asmatrix(matrix).I))
-        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix.T, unit_vec.T)))# as per genz_rep it should just be matrix instead of matrix
+        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix, unit_vec.T)))# as per genz_rep it should just be matrix instead of matrix
 
         SU2_neighbors = SU2_neighbors[3:]
     
