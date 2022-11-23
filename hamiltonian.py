@@ -37,7 +37,7 @@ def continuum_spectrum(n):
     l = 0
     res = []
     while len(res) < n:
-        tmp = [l*(l+1) for _ in range((2*l + 1)**2)]
+        tmp = [l*(l+2) for _ in range((l + 1)**2)]
         res.extend(tmp)
         l += 1
     return res[:n]
