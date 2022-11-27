@@ -89,7 +89,7 @@ def angular_momentum_single_element(element, lattice_array, a: int, n=None, neig
                 SU2_neighbors = swap_elements(SU2_neighbors, index, num)
 
         #gammas = np.append(gammas, np.asarray(unit_vec @ np.asmatrix(matrix).I))
-        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix, unit_vec.T)))# as per genz_rep it should just be matrix instead of matrix
+        gammas = np.append(gammas, np.asarray(np.linalg.solve(matrix, unit_vec.T)))
 
         SU2_neighbors = SU2_neighbors[3:]
     
@@ -153,7 +153,7 @@ def new_calc_gamma(alpha_matrix, a: int):
     '''
     unit_vec = np.zeros(3)
     unit_vec[a-1] = 1
-    return np.dot(unit_vec, np.linalg.inv(alpha_matrix))
+    return np.linalg.solve(alpha_matrix, unit_vec.T)
 
 
 
@@ -168,13 +168,16 @@ def new_angular_momentum(lattice_array, a: int, n=None, left=True):
     for index, element in enumerate(lattice_array):
         _, neighbors_indeces = get_neighbors_single_element(element, lattice_array)
         su2_neighbors = su2_lattice[neighbors_indeces]
-        alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, left=left)
-        gammas = new_calc_gamma(alpha_matrix, a)
-        La[index, index] = -np.sum(gammas)
-        for i,ind in enumerate(inds):
-            La[index, neighbors_indeces[ind]] = gammas[i]
-    
-    return -1j*La
+        for neighbor_group in range(n):
+            alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, left=left)
+            gammas = new_calc_gamma(alpha_matrix, a)
+            La[index, index] = -np.sum(gammas)
+            for i,ind in enumerate(inds):
+                La[index, neighbors_indeces[ind]] = gammas[i]
+            su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
+
+
+    return -1j*La/n
 
 
 
