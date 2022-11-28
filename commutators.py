@@ -1,6 +1,6 @@
 import numpy as np
 from fibonacci import generate_vertices
-from derivative import angular_momentum, new_angular_momentum
+from derivative import angular_momentum
 from su2_element import *
 # all things implementing the commutators
 
@@ -42,11 +42,11 @@ def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
     calculates (taU)_{i,j} for a given lattice array
     '''
     if a == 1:
-        return get_color_states(lattice_array, i = int(not i), j = j)/2
+        return get_color_states(lattice_array, i = int(not i), j = j)#/2
     if a == 2:
-        return -1j*(-1)**i*get_color_states(lattice_array, i = int(not i), j = j)/2
+        return -1j*(-1)**i*get_color_states(lattice_array, i = int(not i), j = j)#/2
     if a == 3:
-        return (-1)**i * get_color_states(lattice_array, i = i, j = j)/2
+        return (-1)**i * get_color_states(lattice_array, i = i, j = j)#/2
     raise BaseException("a is likely not 1, 2 or 3")
 
 def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):
@@ -74,7 +74,6 @@ def calc_r(commutator, vec=None):
     '''
     calculates r = 1/N * sum(abs(z_i)) as written in the writeup
     '''
-    #vec = np.ones(commutator.shape[0], dtype=np.complex64) if vec == None else vec
     z = np.dot(commutator, vec.T)
     z = np.absolute(z)
     return np.mean(z)
