@@ -3,10 +3,11 @@ from numba import njit
 from itertools import combinations
 from su2_element import SU2_element, su2_product
 from lattice_actions import *
+import os
 from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from timeit import timeit
 
-@njit
+#@njit
 def is_linear_independent(matrix, eps=1e-6):
     '''
     returns if the vectors making up a given matrix are linear independent, by calculating the eigenvalues
@@ -14,7 +15,7 @@ def is_linear_independent(matrix, eps=1e-6):
     '''
     return abs(np.linalg.det(matrix)) > eps
         
-@njit
+#@njit
 def get_conn_elements(element : SU2_element, neighbors, left=True):
     '''
     calculate the SU2_elements connecting the neighbor elements with the given element
@@ -57,7 +58,7 @@ def get_linear_independent(element : SU2_element, neighbors, left=True):
     else:
         raise BaseException("No linear independent combination passible")
     
-@njit
+#@njit
 def calc_gamma(alpha_matrix, a: int):
     '''
     solves e_a = gamma \dot alpha_matrix for gamma using np.linalg.solve
@@ -110,40 +111,43 @@ def new_get_linear_independent(element : SU2_element, neighbors, step=None, left
     raise BaseException("No linear independent combination passible")
 
 
-def wrap(index, element, lattice_array,a,n,left):
+def wrap(args):
+    index, element, su2_lattice, lattice_array,a,n,left = args 
     La_i = np.zeros(lattice_array.shape[0])
     _, neighbors_indeces = get_neighbors_single_element(element, lattice_array)
-    su2_lattice = SU2_element.vectorize_init(lattice_array)
+    #su2_lattice = SU2_element.vectorize_init(lattice_array)
     su2_neighbors = su2_lattice[neighbors_indeces]        
     for neighbor_group in range(n):     
         alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, step=(n-neighbor_group), left=left)
     gammas = calc_gamma(alpha_matrix, a)
-    La_i[index, index] = -np.sum(gammas)
+    La_i[index] = -np.sum(gammas)
     for i,ind in enumerate(inds):
-        La_i[index, neighbors_indeces[ind]] = gammas[i]
+        La_i[neighbors_indeces[ind]] = gammas[i]
     su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
-    return La_i
-
-
+    return index,La_i
 
 def mp_new_angular_momentum(lattice_array, a: int, n=None, left=True):
     '''
-    implementation of the derivative with nx3 neighbors, with a different way of choosing neighbors
+    implementation of the derivative with nx3 neighbors, with a different way of choosing neighbors using multiprocessing
     '''
     n = 1 if n == None else n
     La = np.zeros((lattice_array.shape[0], lattice_array.shape[0]))
+    su2_lattice = SU2_element.vectorize_init(lattice_array)
 
     args = list()
-
     for index, element in enumerate(lattice_array):
-        args.append((index, element, lattice_array,a,n,left))
+        args.append(((index, element, su2_lattice, lattice_array,a,n,left)))
 
-    with Pool() as pool:
-        result = pool.starmap(wrap, args)
-    print(result)
+    with Pool(4) as pool:
+        chunksize = 500 if int(lattice_array.shape[0]/4+1)<500 else int(lattice_array.shape[0]/4+1)
+        print(chunksize)
+        result = pool.imap_unordered(wrap, args, chunksize=chunksize)
+        pool.close()
 
+        for _, res in enumerate(result):
+            La[res[0],:] = res[1]
+    return -1j* La/n
 
-    return #-1j* La/n
 
 def new_angular_momentum(lattice_array, a: int, n=None, left=True):
     '''
@@ -167,11 +171,13 @@ def new_angular_momentum(lattice_array, a: int, n=None, left=True):
 
 
 def main():
-    lattice = generate_vertices(2**5)
-    mp_new_angular_momentum(lattice,1)
-
+    lattice = generate_vertices(2**8)
+    t1 = mp_new_angular_momentum(lattice,1)
+    t2 = new_angular_momentum(lattice, 1)
+    print(t1==t2)
+    
 
     return
-
+1
 if __name__ == "__main__":
     main()
