@@ -1,0 +1,4 @@
+# ignore tmp folders
+tmp*/
+# and the __pycache__ folder
+__pycache__/
