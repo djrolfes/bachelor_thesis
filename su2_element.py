@@ -54,11 +54,12 @@ class SU2_element:
         with sigma being the pauli matrices sigma_1, sigma_2 and sigma_3, of a 
         given SU2_element.
         '''
-        #if abs(self.params[0]+1)<1e-8:
-        #    return np.array([np.pi, 0, 0])
+        self.renormalise()
+        if abs(self.params[0]+1)<1e-8:
+            return np.array([np.pi, 0, 0])        
         magnitude = np.arccos(self.params[0])
-        quotient = 2. if self.params[0] == 1. else 2*magnitude/np.sin(magnitude)
-        return quotient/2 *np.array([self.params[3],self.params[2],self.params[1]])
+        quotient = 1. if self.params[0] < (1.+1e-9) and self.params[0]>(1.-1e-9) else 1*magnitude/np.sin(magnitude)
+        return quotient *np.array([self.params[3],self.params[2],self.params[1]])
 
     def matrix(self):
         '''

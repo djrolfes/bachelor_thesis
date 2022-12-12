@@ -5,14 +5,17 @@ from multiprocessing import Pool
 from su2_element import *
 # all things implementing the commutators
 
-def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):
+def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None, left=True, ang=angular_momentum):
     '''
     implementation of the commutator [La,U]
     '''
     i = 0 if i == None else i
     j = 0 if j == None else j
     n = 1 if n == None else n
-    La = ang(lattice_array, a, n=n)
+    if n==1:
+        La = ang(lattice_array, a=a, left=left)
+    else:
+        La = ang(lattice_array, a=a, left=left, n=n)
     U = get_color_states(lattice_array, i=i, j=j)
     return np.dot(La, U) - np.dot(U,La)
 
