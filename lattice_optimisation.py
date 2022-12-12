@@ -74,7 +74,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
             angles += adaptive*nabla
         else:
             print('overshot')   # shouldn't be triggert. if it is, choose less neighbors
-                                # or more, some small lattice sizes don't converge
+                                # also: some small lattice sizes don't converge
             angles = old_angles + adaptive*old_nabla
             tmp = mean
             mean = old_mean
