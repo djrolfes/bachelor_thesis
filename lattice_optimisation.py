@@ -54,7 +54,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
     funtion to optimize a lattice of points by maximizing the distance between the nearest 'neighbors=n' 
     neighbors of each lattice element
     '''
-    eps = 1e-3 if eps == None else eps
+    eps = 1e-10 if eps == None else eps
     neighbors = 1 if neighbors == None else neighbors
 
 
@@ -73,7 +73,8 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
             old_nabla = nabla
             angles += adaptive*nabla
         else:
-            print('overshot') # shouldn't be triggert. if it is, choose less neighbors
+            print('overshot')   # shouldn't be triggert. if it is, choose less neighbors
+                                # or more, some small lattice sizes don't converge
             angles = old_angles + adaptive*old_nabla
             tmp = mean
             mean = old_mean
