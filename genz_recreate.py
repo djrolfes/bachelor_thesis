@@ -39,9 +39,9 @@ def find_signs(n:int):
     x = 1 - 2*(np.broadcast_to(i, (n, len(i))).T // divisors % 2)
     return x
 
-def gen_all_points(M: int, k: int = 4):
+def gen_all_points_no_normalisation(M: int, k: int = 4):
     '''
-    generates all Points in S^3 including normalisation
+    generates all Points in S^3 excluding normalisation
     '''
     pos_points = find_points(M, k)
     signs = find_signs(k)
@@ -59,7 +59,14 @@ def gen_all_points(M: int, k: int = 4):
             if np.all(np.logical_or(point != 0,sign > 0)):
                 res = np.vstack((res, point*sign))
     res = res[1:]
+    return res
 
+
+def gen_all_points(M: int, k: int = 4):
+    '''
+    generates all Points in S^3 including normalisation
+    '''
+    res = gen_all_points_no_normalisation(M, k=k)
     res = (1/np.linalg.norm(res, axis=1) * res.T).T
     return res
 
@@ -149,7 +156,6 @@ def get_forward_neighbor(lattice, id:int, a:int, left:bool = True):
             break
 
     return res
-
 
 
 
@@ -256,6 +262,21 @@ def gen_La(lattice, a=1, left=True):
     
     return -1j*La/2
 
+
+def compute_Neighors_As(Lattice, a : int = 1):
+    '''
+    generates the neighbors according to the genz writeup version
+    '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
+    '''
+    norms = np.linalg.norm(Lattice)
+    Lattice_normed = Lattice/norms
+    #see if there are NANs
+    pair1 = np.array([0,a])
+    pair2 = np.array([0,1,2,3])[-pair1]
+
+    res = np.zeros((4,3))#maybe (3,4), tbc in Bonn
+
+    return
 
 
 if __name__ == "__main__":
