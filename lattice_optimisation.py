@@ -16,7 +16,8 @@ def angles_to_cartesian(angle_array):
 
 def calc_mean_distance_angles(angle_array, neighbors=None):
     '''
-    returns the mean distance of each element and its nearest neighbor,
+    returns the mean distance of each element and its nearest n neighbors,
+    as well as the Vector representing the gradient 
     used for maximising
     '''
     neighbors = 1 if neighbors==None else neighbors
@@ -46,7 +47,7 @@ def calc_mean_distance_angles(angle_array, neighbors=None):
             nablas[i] += nabla(angle_array[i], angle_array[neighbor_indeces[i,j]])
             nablas[neighbor_indeces[i,j]] += nabla(angle_array[neighbor_indeces[i,j]], angle_array[i])
     nablas = nablas/angle_array.shape[0]
-    return np.mean(result), nablas
+    return np.mean(result), nablas, np.std(result)
 
 
 def lattice_optimizer(angles, eps=None, neighbors=None):
@@ -64,10 +65,11 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
     old_nabla = np.zeros_like(angles, dtype=np.float64)
     adaptive = 1
     mean_arr = []
+    deviation_arr = []
 
     while (abs(mean-old_mean) > eps):
         old_mean = mean
-        mean, nabla = calc_mean_distance_angles(angles, neighbors=neighbors)
+        mean, nabla, standart_deviation = calc_mean_distance_angles(angles, neighbors=neighbors)
         if mean > old_mean:
             old_angles = angles
             old_nabla = nabla
@@ -81,8 +83,9 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
             old_mean = tmp
         adaptive = abs(mean-old_mean) # don't know why this works as well as it does
         mean_arr.append(mean)
+        deviation_arr.append(standart_deviation)
 
-    return angles, mean, mean_arr
+    return angles, mean, mean_arr, deviation_arr
 
 
 

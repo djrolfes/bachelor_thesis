@@ -68,6 +68,31 @@ def calc_gamma(alpha_matrix, a: int):
     return np.linalg.solve(alpha_matrix, unit_vec.T)
 
 
+def angular_momentum_two_neighbors_new(lattice_array, a: int, n=None, left=True):
+    '''
+    implementation of the forward derivative with 2x3 neighbors using a different approximation
+    '''
+    n = 2
+    La = np.zeros((lattice_array.shape[0], lattice_array.shape[0]))
+    su2_lattice = SU2_element.vectorize_init(lattice_array)
+
+    for index, element in enumerate(lattice_array):
+        _, neighbors_indeces = get_neighbors_single_element(element, lattice_array)
+        su2_neighbors = su2_lattice[neighbors_indeces]
+        alpha_matrix, inds = get_linear_independent(SU2_element(element), su2_neighbors, left=left)
+        gammas = calc_gamma(alpha_matrix, a)
+        La[index, index] += -np.sum(gammas)
+        for i,ind in enumerate(inds):
+            La[index, neighbors_indeces[ind]] += gammas[i]
+        su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
+        alpha_matrix, inds = get_linear_independent(SU2_element(element), su2_neighbors, left=left)
+        gammas = calc_gamma(alpha_matrix, a)
+        La[index, index] += np.sum(gammas)
+        for i,ind in enumerate(inds):
+            La[index, neighbors_indeces[ind]] += gammas[i]
+
+    return -1j*La/n
+
 
 def angular_momentum(lattice_array, a: int, n=None, left=True):
     '''

@@ -82,6 +82,15 @@ def compute_single_angle(neighbor, elem, left = True):
         conn_element = su2_product(elem.inverse(), neighbor)
     return conn_element.get_angles()
 
+def compute_angles(neighbors, elem, left = True):
+    '''
+    computes and returns angles for the connecting elements of a given list of neighbors
+    '''
+    res = np.zeros((neighbors.shape[0],3))
+    for index, neighbor in enumerate(neighbors):
+        res[index,:] = compute_single_angle(neighbor, elem, left=left)
+    return res
+
 def check_two_vec_for_lin_ind(v1, v2):
     '''
     checks two vectors on linear independece, returns True if they are linear independent
@@ -103,7 +112,10 @@ def calc_gamma(alpha_matrix, a: int):
     '''
     unit_vec = np.zeros(3)
     unit_vec[a-1] = 1
-    return np.linalg.solve(alpha_matrix, unit_vec.T)
+    print(alpha_matrix)
+    res = np.linalg.solve(alpha_matrix, unit_vec.T)
+    print(res)
+    return res
 
 def get_forward_neighbor(lattice, id:int, a:int, left:bool = True):
     '''
@@ -263,22 +275,72 @@ def gen_La(lattice, a=1, left=True):
     return -1j*La/2
 
 
-def compute_Neighors_As(Lattice, a : int = 1):
+def find_Neighbour_Ids(lattice, neighbors):
+    '''
+    finds the neighbors indeces according to the genz writeup version
+    '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
+    '''  
+    g = neighbors[0]
+    res = np.zeros(3, dtype=int)
+    for i in range(3):
+        g[i,:] = neighbors[1]*g[i,:]
+        res[i] = np.where((lattice == tuple(g[i,:])).all(axis=1))[0]
+    return res
+
+def compute_Neighors_As(Point, a : int = 1):
     '''
     generates the neighbors according to the genz writeup version
     '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
     '''
-    norms = np.linalg.norm(Lattice)
-    Lattice_normed = Lattice/norms
+    unsigned_point = abs(Point)
+    Signs = np.zeros_like(Point)
+    for i,p in enumerate(Point):
+        Signs[i] = 1 if p == 0 else p/unsigned_point[i]
     #see if there are NANs
     pair1 = np.array([0,a])
-    pair2 = np.array([0,1,2,3])[-pair1]
+    pair2 = np.array([0,1,2,3])[-(pair1+1)%4]
 
-    res = np.zeros((4,3))#maybe (3,4), tbc in Bonn
+    res = np.vstack((unsigned_point,unsigned_point,unsigned_point))
+    if all(unsigned_point[pair1] == 0) or all(unsigned_point[pair2] == 0):
+        max_value = max(unsigned_point)
+        max_value_index = np.argwhere(max_value == unsigned_point)[0][0]
+        res[:,max_value_index] = res[:,max_value_index] - 1
+        kk = np.arange(4)
+        for neighbor in range(3):
+            res[neighbor, np.delete(kk,max_value_index)[neighbor]] = res[neighbor, np.delete(kk,max_value_index)[neighbor]] + 1
+    else:
+        imax1 = np.argwhere(unsigned_point[pair1] == max(unsigned_point[pair1]))[0][0]
+        imax2 = np.argwhere(unsigned_point[pair2] == max(unsigned_point[pair2]))[0][0]
+        pair3 = np.array([pair1[imax1], pair2[imax2]])
+        imax3 = np.argwhere(unsigned_point[pair3] == max(unsigned_point[pair3]))[0][0]
+        for i, (pair, imax) in enumerate(zip([pair1, pair2, pair3], [imax1, imax2, imax3])):
+            res[i, pair[imax]] -= 1
+            res[i, np.delete(pair,imax)[0]] += 1
 
-    return
+    return  res, Signs
+
+
+def genLaNew(lattice, a = 1, left = True):
+    '''
+    generates the La operator according to the genz writeup version
+    '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
+    '''
+    N = lattice.shape[0]
+    La = np.zeros((N,N))
+    for point in range(N):
+        neighbors = compute_Neighors_As(lattice[point,:], a = a)
+        neighbor_indeces = find_Neighbour_Ids(lattice, neighbors)
+        angles = compute_angles(neighbors[0], lattice[point], left=left)
+        angles = angles.T
+        gammas = calc_gamma(angles, a = a)
+        La[point, point] = -np.sum(gammas)
+        for j, index in enumerate(neighbor_indeces):
+            La[point, index] = gammas[j]
+    return -1j*La
 
 
 if __name__ == "__main__":
-    print(gen_La_forward(gen_all_points(2)))
+    points = gen_all_points_no_normalisation(5)
+    La = genLaNew(points)
+    print(La)
 
