@@ -131,14 +131,14 @@ def get_color_states(lattice, i=0, j=0):
     '''
     create the components in color space of U as a diagonal matrix
     '''
-    #J = 1/np.sqrt(np.sum(lattice**2, axis=1))
+    J = 1/np.sqrt(np.sum(lattice**2, axis=1))
     #print("J:\n", J)
     if (i==0 and j==0) or (i==1 and j==1):
-        u = (lattice[:,0] + 1j*lattice[:,1])#*J
+        u = (lattice[:,0] + 1j*lattice[:,1])*J
     if (i==1 and j==1):
         u = np.conjugate(u)
     if (i != j):
-        u = (lattice[:,2] + 1j*lattice[:,3])#*J
+        u = (lattice[:,2] + 1j*lattice[:,3])*J
     if (i==1 and j==0):
         u = -np.conjugate(u)
 

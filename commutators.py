@@ -41,9 +41,14 @@ def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
     #La = res[0]
     #Lb = res[1]
     #Lc = res[2]
-    La = ang(lattice_array, a, n=n)
-    Lb = ang(lattice_array, b, n=n)
-    Lc = ang(lattice_array, c, n=n)
+    if n == 1:
+        La = ang(lattice_array, a)
+        Lb = ang(lattice_array, b)
+        Lc = ang(lattice_array, c)
+    else:
+        La = ang(lattice_array, a, n=n)
+        Lb = ang(lattice_array, b, n=n)
+        Lc = ang(lattice_array, c, n=n)
     return (np.dot(La, Lb) - np.dot(Lb,La)) + 2j*epsilon()*Lc
 
 
@@ -52,11 +57,11 @@ def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
     calculates (taU)_{i,j} for a given lattice array
     '''
     if a == 1:
-        return get_color_states(lattice_array, i = int(not i), j = j)/2
+        return get_color_states(lattice_array, i = int(not i), j = j)
     if a == 2:
-        return -1j*(-1)**i*get_color_states(lattice_array, i = int(not i), j = j)/2
+        return -1j*(-1)**i * get_color_states(lattice_array, i = int(not i), j = j)
     if a == 3:
-        return (-1)**i * get_color_states(lattice_array, i = i, j = j)/2
+        return (-1)**i * get_color_states(lattice_array, i = i, j = j)
     raise BaseException("a is likely not 1, 2 or 3")
 
 def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):

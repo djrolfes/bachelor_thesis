@@ -112,9 +112,9 @@ def calc_gamma(alpha_matrix, a: int):
     '''
     unit_vec = np.zeros(3)
     unit_vec[a-1] = 1
-    print(alpha_matrix)
+    #print(alpha_matrix)
     res = np.linalg.solve(alpha_matrix, unit_vec.T)
-    print(res)
+    #print(res)
     return res
 
 def get_forward_neighbor(lattice, id:int, a:int, left:bool = True):
@@ -287,7 +287,7 @@ def find_Neighbour_Ids(lattice, neighbors):
         res[i] = np.where((lattice == tuple(g[i,:])).all(axis=1))[0]
     return res
 
-def compute_Neighors_As(Point, a : int = 1):
+def compute_Neighors_As(Point, a : int = 1, backward = False):
     '''
     generates the neighbors according to the genz writeup version
     '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
@@ -295,10 +295,10 @@ def compute_Neighors_As(Point, a : int = 1):
     unsigned_point = abs(Point)
     Signs = np.zeros_like(Point)
     for i,p in enumerate(Point):
-        Signs[i] = 1 if p == 0 else p/unsigned_point[i]
+        Signs[i] = (-1)**int(backward) if p == 0 else p/unsigned_point[i]
     #see if there are NANs
     pair1 = np.array([0,a])
-    pair2 = np.array([0,1,2,3])[-(pair1+1)%4]
+    pair2 = np.delete(np.array([0,1,2,3]),pair1)
 
     res = np.vstack((unsigned_point,unsigned_point,unsigned_point))
     if all(unsigned_point[pair1] == 0) or all(unsigned_point[pair2] == 0):
@@ -339,8 +339,34 @@ def genLaNew(lattice, a = 1, left = True):
     return -1j*La
 
 
+def genLaNew_t2n(lattice, a = 1, left = True):
+    '''
+    generates the La operator according to the genz writeup version
+    '1ebf6ce8e1385574a35e379bb5d887b4c939cee0'
+    '''
+    N = lattice.shape[0]
+    La = np.zeros((N,N))
+    for point in range(N):
+        neighbors_f = compute_Neighors_As(lattice[point,:], a = a)
+        neighbors_b = compute_Neighors_As(lattice[point,:], a = a, backward = True)
+        neighbor_f_indeces = find_Neighbour_Ids(lattice, neighbors_f)
+        neighbor_b_indeces = find_Neighbour_Ids(lattice, neighbors_b)
+        angles_f = compute_angles(neighbors_f[0], lattice[point], left=left)
+        angles_b = compute_angles(neighbors_b[0], lattice[point], left=left)
+        angles_f = angles_f.T
+        angles_b = angles_b.T
+        gammas_f = calc_gamma(angles_f, a = a)
+        gammas_b = calc_gamma(angles_b, a = a)
+        La[point, point] += -np.sum(gammas_f)
+        La[point, point] += -np.sum(gammas_b)
+        for j, index in enumerate(neighbor_f_indeces):
+            La[point, index] += gammas_f[j]
+        for j, index in enumerate(neighbor_b_indeces):
+            La[point, index] += gammas_b[j]
+    return -1j*La/2
+
 if __name__ == "__main__":
-    points = gen_all_points_no_normalisation(5)
-    La = genLaNew(points)
-    print(La)
+    points = gen_all_points_no_normalisation(3)
+    La = genLaNew_t2n(points,a=1)
+    #print(La)
 
