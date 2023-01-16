@@ -1,6 +1,7 @@
 import numpy as np
 from fibonacci import generate_vertices
 from derivative import angular_momentum, new_angular_momentum
+from genz_recreate import gen_all_points_no_normalisation
 from multiprocessing import Pool
 from su2_element import *
 # all things implementing the commutators
@@ -49,7 +50,7 @@ def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
         La = ang(lattice_array, a, n=n)
         Lb = ang(lattice_array, b, n=n)
         Lc = ang(lattice_array, c, n=n)
-    return (np.dot(La, Lb) - np.dot(Lb,La)) + 2j*epsilon()*Lc
+    return (np.dot(La, Lb) - np.dot(Lb, La)) + 2*1j*epsilon()*Lc
 
 
 def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
@@ -85,19 +86,23 @@ def fourier_vector(lattice_array, a:int, k):
     return result
 
 
-def calc_r(commutator, vec=None):
+def calc_r(commutator, vec=None, sig=False):
     '''
     calculates r = 1/N * sum(abs(z_i)) as written in the writeup
     '''
     z = np.dot(commutator, vec.T)
     z = np.absolute(z)
+    if sig:
+        return np.mean(z), np.std(z)
     return np.mean(z)
 
 
 
 def main():
-    lattice = generate_vertices(2**5)
-    comm = La_Lb_commutator(lattice, 1, 2, 1, ang=new_angular_momentum)
+    lattice = gen_all_points_no_normalisation(2)
+    #comm = La_Lb_commutator(lattice, 1, 2, 1, ang=new_angular_momentum)
+    comm = test_angular_momentum_comutator(lattice, 1, i=0, j=1, ang=new_angular_momentum)
+    comm = calc_ta_U(lattice, 3)
     print(comm)
     return
 

@@ -4,3 +4,7 @@ tmp*/
 __pycache__/
 __pycache__/*
 *.pyc
+*.cpython*
+# as well as most of the csv's
+lattices/all_them_lattices/*
+lattices/all_them_means/*

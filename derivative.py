@@ -108,9 +108,9 @@ def angular_momentum(lattice_array, a: int, n=None, left=True):
         for _ in range(n):
             alpha_matrix, inds = get_linear_independent(SU2_element(element), su2_neighbors, left=left)
             gammas = calc_gamma(alpha_matrix, a)
-            La[index, index] = -np.sum(gammas)
+            La[index, index] += -np.sum(gammas)
             for i,ind in enumerate(inds):
-                La[index, neighbors_indeces[ind]] = gammas[i]
+                La[index, neighbors_indeces[ind]] += gammas[i]
             su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
     return -1j*La/n
 
@@ -187,11 +187,11 @@ def new_angular_momentum(lattice_array, a: int, n=None, left=True):
         su2_neighbors = su2_lattice[neighbors_indeces]        
         for neighbor_group in range(n):     
             alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, step=(n-neighbor_group), left=left)
-        gammas = calc_gamma(alpha_matrix, a)
-        La[index, index] = -np.sum(gammas)
-        for i,ind in enumerate(inds):
-            La[index, neighbors_indeces[ind]] = gammas[i]
-        su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
+            gammas = calc_gamma(alpha_matrix, a)
+            La[index, index] += -np.sum(gammas)
+            for i,ind in enumerate(inds):
+                La[index, neighbors_indeces[ind]] += gammas[i]
+            su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
     return -1j* La/n
 
 
@@ -201,8 +201,8 @@ def main():
     t2 = new_angular_momentum(lattice, 1)
     print(t1==t2)
     
-
+    
     return
-1
+
 if __name__ == "__main__":
     main()
