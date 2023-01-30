@@ -45,35 +45,49 @@ def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
     if n == 1:
         La = ang(lattice_array, a)
         Lb = ang(lattice_array, b)
+        comm = np.dot(La, Lb) - np.dot(Lb, La)
+        del La
+        del Lb
         Lc = ang(lattice_array, c)
     else:
         La = ang(lattice_array, a, n=n)
         Lb = ang(lattice_array, b, n=n)
+        comm = np.dot(La, Lb) - np.dot(Lb, La)
+        del La
+        del Lb
         Lc = ang(lattice_array, c, n=n)
-    return (np.dot(La, Lb) - np.dot(Lb, La)) + 2*1j*epsilon()*Lc
+    return comm + 2*1j*epsilon()*Lc
 
 
-def calc_ta_U(lattice_array, a = 1, i = 0, j = 0):
+def calc_ta_U(lattice_array, a = 1, i = 0, j = 0, left = True):
     '''
     calculates (taU)_{i,j} for a given lattice array
     '''
-    if a == 1:
-        return get_color_states(lattice_array, i = int(not i), j = j)
-    if a == 2:
-        return -1j*(-1)**i * get_color_states(lattice_array, i = int(not i), j = j)
-    if a == 3:
-        return (-1)**i * get_color_states(lattice_array, i = i, j = j)
+    if left: 
+        if a == 1:
+            return get_color_states(lattice_array, i = int(not i), j = j)
+        if a == 2:
+            return -1j*(-1)**i * get_color_states(lattice_array, i = int(not i), j = j)
+        if a == 3:
+            return (-1)**i * get_color_states(lattice_array, i = i, j = j)
+    else:
+        if a == 1:
+            return get_color_states(lattice_array, i = i, j = int(not j))
+        if a == 2:
+            return -1j*(-1)**j * get_color_states(lattice_array, i = i, j = int(not j))
+        if a == 3:
+            return (-1)**j * get_color_states(lattice_array, i = i, j = j)
     raise BaseException("a is likely not 1, 2 or 3")
 
-def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum):
+def test_angular_momentum_comutator(lattice_array, a:int, n=None, i=None, j=None, ang=angular_momentum, left=True):
     '''
     returns [L,U] - (ta)U 
     '''
     i = 0 if i == None else i
     j = 0 if j == None else j
     n = 1 if n == None else n
-    comm = angular_momentum_commutator(lattice_array, a, n=n, i=i, j=j, ang=ang)
-    ta_U = calc_ta_U(lattice_array, a = a, i = i, j = j)
+    comm = angular_momentum_commutator(lattice_array, a, n=n, i=i, j=j, ang=ang, left= left)
+    ta_U = calc_ta_U(lattice_array, a = a, i = i, j = j, left = left)
     return comm - ta_U
 
 def fourier_vector(lattice_array, a:int, k):
