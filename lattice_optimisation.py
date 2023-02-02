@@ -1,6 +1,6 @@
 import numpy as np
 from fibonacci import generate_vertices_angles
-from lattice_actions import get_neighbors
+from lattice_actions import get_neighbors, get_neighbors_kdtree
 
 def angles_to_cartesian(angle_array):
     '''
@@ -37,8 +37,8 @@ def calc_mean_distance_angles(angle_array, neighbors=None):
         return np.array([dpsi_i,dtheta_i,dphi_i])
 
     lattice_array = angles_to_cartesian(angle_array)
-    _, neighbor_indeces = get_neighbors(lattice_array)
-    neighbor_indeces = neighbor_indeces[:,1:neighbors+1]
+    _, neighbor_indeces = get_neighbors_kdtree(lattice_array, neighbours=neighbors)
+    neighbor_indeces = neighbor_indeces[:,1:]
     result = np.zeros_like(neighbor_indeces, dtype=np.float64)
     nablas = np.zeros_like(angle_array, dtype=np.float64)
     for i in range(result.shape[0]):
@@ -55,7 +55,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
     funtion to optimize a lattice of points by maximizing the distance between the nearest 'neighbors=n' 
     neighbors of each lattice element
     '''
-    eps = 1e-10 if eps == None else eps
+    eps = 1e-14 if eps == None else eps
     neighbors = 1 if neighbors == None else neighbors
 
 
@@ -93,7 +93,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
 
 def main():
     angles = generate_vertices_angles(2**8)
-    opti, mean, mean_arr = lattice_optimizer(angles, neighbors=3, eps=1e-10)
+    opti, mean, mean_arr,_ = lattice_optimizer(angles, neighbors=3, eps=1e-10)
     print(opti, mean, mean_arr)
     return
 

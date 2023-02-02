@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit, jit
 from fibonacci import generate_vertices, generate_vertices_angles
+from scipy.spatial import KDTree
 #all things lattice actions
 
 
@@ -37,28 +38,13 @@ def get_neighbors(lattice_array, norm=None):
 
     return output, sort_indeces
 
-
-def get_neighbors_old(lattice_array, neighbors=None):
+def get_neighbors_kdtree(lattice_array, neighbours = 1):
     '''
-    returns the next 'neighbors=n' neighbor vertices to every given lattice vertice by eucl. distance
-    in a (#vertices, n, dimension) shaped array and the array 'sort_indeces' used for sorting the distances.
-    'sort_indeces' includes an #vertices x #vertices array used for sorting the vertices by distance
-
-    default output for neighbors is all neighbors.
+    returns the nearest neigbours to each element in the lattice, using a KD Tree
     '''
-    neighbors = len(lattice_array)-1 if neighbors==None else neighbors
-    #try:
-    distances = vertice_distances(lattice_array)
-    #sort_indeces = np.argsort(distances)
-    sort_indeces = np.zeros_like(distances,dtype="int32")
-    output = np.zeros((lattice_array.shape[0],neighbors,lattice_array.shape[1]))
-    for index, distance in enumerate(distances):#sort_i in enumerate(sort_indeces):
-        sort_i = np.argsort(distance)
-        output[index,:,:] = lattice_array[sort_i[1:neighbors+1]]
-        sort_indeces[index,::] = sort_i
-    return output, sort_indeces
-    #except ValueError:
-    #    raise ValueError("Vertex does not have enough neighbors.")
+    tree = KDTree(lattice_array)
+    result = tree.query(lattice_array, k=neighbours+1)
+    return result
 
 @njit
 def get_neighbors_single_element(element, lattice_array, norm=None):
@@ -89,7 +75,7 @@ def calc_mean_distance(lattice_array, norm=None):
 def main():
     lattice = generate_vertices(2**5)
     print(get_neighbors(lattice)[1])
-    print(get_neighbors_old(lattice)[1])
+    print(get_neighbors_kdtree(lattice, neighbours=2)[1])
 
     return
 
