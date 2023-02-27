@@ -3,9 +3,8 @@ from numba import njit
 from itertools import combinations
 from su2_element import SU2_element, su2_product
 from lattice_actions import *
-import os
 from multiprocessing import Pool
-from timeit import timeit
+from scipy import sparse
 
 #@njit
 def is_linear_independent(matrix, eps=1e-6):
@@ -180,6 +179,27 @@ def new_angular_momentum(lattice_array, a: int, n=None, left=True):
     '''
     n = 1 if n == None else n
     La = np.zeros((lattice_array.shape[0], lattice_array.shape[0]))
+    su2_lattice = SU2_element.vectorize_init(lattice_array)
+    
+    for index, element in enumerate(lattice_array):
+        _, neighbors_indeces = get_neighbors_single_element(element, lattice_array)
+        su2_neighbors = su2_lattice[neighbors_indeces]        
+        for neighbor_group in range(n):     
+            alpha_matrix, inds = new_get_linear_independent(SU2_element(element), su2_neighbors, step=(n-neighbor_group), left=left)
+            gammas = calc_gamma(alpha_matrix, a)
+            La[index, index] += -np.sum(gammas)
+            for i,ind in enumerate(inds):
+                La[index, neighbors_indeces[ind]] += gammas[i]
+            su2_neighbors = np.delete(su2_neighbors, inds, axis=0)
+    return -1j* La/n
+
+def new_angular_momentum_sparce(lattice_array, a: int, n=None, left=True):
+    '''
+    implementation of the derivative with nx3 neighbors, with a different way of choosing neighbors
+    '''
+    n = 1 if n == None else n
+    La = np.zeros((lattice_array.shape[0], lattice_array.shape[0]))
+    La = sparse.lil_matrix(La)
     su2_lattice = SU2_element.vectorize_init(lattice_array)
     
     for index, element in enumerate(lattice_array):

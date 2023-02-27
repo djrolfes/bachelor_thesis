@@ -21,6 +21,7 @@ def vertice_distances(lattice_array, norm=None):
 
     return distances+distances.T
 
+
 @njit
 def get_neighbors(lattice_array, norm=None):
     '''
@@ -69,13 +70,14 @@ def calc_mean_distance(lattice_array, norm=None):
     '''
     norm = np.linalg.norm if norm is None else norm
 
-    dist = np.sort(vertice_distances(lattice_array, norm=norm))
-    return np.mean(dist.T[1])
+    _, neighbor_indeces = get_neighbors_kdtree(lattice_array)
+    neighbor_indeces = neighbor_indeces[:,1:].flatten()
+    dist = norm(lattice_array - lattice_array[neighbor_indeces], axis=1)**2
+    return np.mean(dist)
 
 def main():
     lattice = generate_vertices(2**5)
-    print(get_neighbors(lattice)[1])
-    print(get_neighbors_kdtree(lattice, neighbours=2)[1])
+    a = calc_mean_distance(lattice)
 
     return
 

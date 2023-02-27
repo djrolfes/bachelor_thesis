@@ -4,6 +4,7 @@ from derivative import angular_momentum, new_angular_momentum
 from genz_recreate import gen_all_points_no_normalisation
 from multiprocessing import Pool
 from su2_element import *
+from scipy import sparse
 # all things implementing the commutators
 
 def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None, left=True, ang=angular_momentum):
@@ -18,6 +19,9 @@ def angular_momentum_commutator(lattice_array, a:int, n=None, i=None, j=None, le
     else:
         La = ang(lattice_array, a=a, left=left, n=n)
     U = get_color_states(lattice_array, i=i, j=j)
+    if sparse.issparse(La):
+        U = sparse.lil_matrix(U)
+        return (La.tocsr()@U.tocsr() - U.tocsr()@La.tocsr()).toarray()
     return np.dot(La, U) - np.dot(U,La)
 
 def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
@@ -35,27 +39,29 @@ def La_Lb_commutator(lattice_array, a:int, b:int, n=None, ang=angular_momentum):
 
     n = 1 if n == None else n
     c = ({1,2,3} - {a,b}).pop()
-    #args = [(lattice_array, 1, n),(lattice_array, 2, n),(lattice_array, 3, n)]
-    #with Pool() as pool:
-    #    res = pool.starmap(ang, args)
-    #    pool.close()
-    #La = res[0]
-    #Lb = res[1]
-    #Lc = res[2]
+
     if n == 1:
         La = ang(lattice_array, a)
         Lb = ang(lattice_array, b)
-        comm = np.dot(La, Lb) - np.dot(Lb, La)
+        if sparse.issparse(La):
+            comm = La.tocsr()@ Lb.tocsr() - Lb.tocsr() @  La.tocsr()
+        else:
+            comm = np.dot(La, Lb) - np.dot(Lb, La)
         del La
         del Lb
         Lc = ang(lattice_array, c)
     else:
         La = ang(lattice_array, a, n=n)
         Lb = ang(lattice_array, b, n=n)
-        comm = np.dot(La, Lb) - np.dot(Lb, La)
+        if sparse.issparse(La):
+            comm = La.tocsr()@ Lb.tocsr() - Lb.tocsr() @  La.tocsr()
+        else:
+            comm = np.dot(La, Lb) - np.dot(Lb, La)
         del La
         del Lb
         Lc = ang(lattice_array, c, n=n)
+    if sparse.issparse(comm):
+        return (comm + 2*1j*epsilon()*Lc).toarray()
     return comm + 2*1j*epsilon()*Lc
 
 
