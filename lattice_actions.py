@@ -64,7 +64,7 @@ def get_neighbors_single_element(element, lattice_array, norm=None):
     return sorted_lattice, sort_indeces
 
 
-def calc_mean_distance(lattice_array, norm=None):
+def calc_mean_distance(lattice_array, norm=None, std = False):
     '''
     returns the mean distance between nearest elements of a lattice_array
     '''
@@ -73,6 +73,8 @@ def calc_mean_distance(lattice_array, norm=None):
     _, neighbor_indeces = get_neighbors_kdtree(lattice_array)
     neighbor_indeces = neighbor_indeces[:,1:].flatten()
     dist = norm(lattice_array - lattice_array[neighbor_indeces], axis=1)**2
+    if std:
+        return np.mean(dist), np.std(dist)
     return np.mean(dist)
 
 def main():

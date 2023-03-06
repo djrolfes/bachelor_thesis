@@ -24,6 +24,7 @@ def cartesian_to_angles(lattice_array):
         angles2 = np.arccos(arr[1]/np.linalg.norm(arr[1:]))
         angles3 = np.arccos(arr[-2]/np.linalg.norm(arr[-2:])) if arr[-1]>0 else 2*np.pi - np.arccos(arr[-2]/np.linalg.norm(arr[-2:]))
         return np.array([angles1, angles2, angles3])
+    
     angles_array = np.apply_along_axis(single_element, 1 , lattice_array)
     return angles_array
 
@@ -102,7 +103,7 @@ def lattice_optimizer(angles, eps=None, neighbors=None):
     return angles, mean, mean_arr, deviation_arr
 
 
-def calc_mean_distance_angles_simple(angle_array):
+def calc_mean_distance_angles_simple(angle_array, std = False):
     '''
     returns the mean distance of each element and its nearest n neighbors,
     as well as the Vector representing the gradient 
@@ -123,6 +124,8 @@ def calc_mean_distance_angles_simple(angle_array):
     for i, element in enumerate(angle_array):
         distance_nearest_neigbour[i] = norm(element, angle_array[neighbor_indeces[i]])
     result = np.mean(distance_nearest_neigbour)
+    if std:
+        return result, np.std(distance_nearest_neigbour)
     return result
 
 def lattice_optimizer_scipy(angle_array):
@@ -136,7 +139,7 @@ def lattice_optimizer_scipy(angle_array):
         lattice_array = angles_to_cartesian(angle_array)
         _, neighbor_indeces = get_neighbors_kdtree(lattice_array)
         neighbor_indeces = neighbor_indeces[:,1:].flatten()
-        grad = np.array([nabla(element, angle_array[neighbor_indeces[i]]) for i, element in enumerate(angle_array)])
+        grad = np.array([nabla(element, angle_array[neighbor_indeces[i]]) for i, element in enumerate(angle_array)])/angle_array.shape[0]
         return -grad.flatten()
 
     def call_correct(angle_array):
@@ -152,9 +155,7 @@ def lattice_optimizer_scipy(angle_array):
 
 
 def main():
-    glob_angles = generate_vertices_angles(2**5)
-    res = lattice_optimizer_scipy(glob_angles)
-    print(res)
+    
     return
 
 if __name__ == "__main__":
