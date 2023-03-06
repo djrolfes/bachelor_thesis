@@ -10,3 +10,4 @@ lattices/all_them_lattices/*
 lattices/all_them_means/*
 lattice/better_*
 *.pickle
+*.npy
